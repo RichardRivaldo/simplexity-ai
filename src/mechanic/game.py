@@ -1,10 +1,10 @@
 import pickle
 from time import time
 
-from src.ai import Minimax, LocalSearch
-from src.constant import ShapeConstant, GameConstant, Path
-from src.model import Board, Player, State, Config
-from src.utility import is_out, is_win, is_full, place
+from src.ai import LocalSearch, Minimax
+from src.constant import GameConstant, Path, ShapeConstant
+from src.model import Board, Config, Player, State
+from src.utility import is_full, is_out, is_win, place
 
 
 class Game:
@@ -17,8 +17,8 @@ class Game:
         bot: List[Bot] -> bot used in pvb or bvb
 
     [METHODS]
-        __gen_player -> Generate player, if is_dump == True, 
-            it will take bot from bin folder based on game type in config 
+        __gen_player -> Generate player, if is_dump == True,
+            it will take bot from bin folder based on game type in config
         __input -> Input for player
         __is_valid -> Check if input is valid
         __placement -> Placement phase for player or bot
@@ -75,8 +75,10 @@ class Game:
         return choosen_col, choosen_shape
 
     def __is_valid(self, choosen_col, choosen_shape):
-        if not is_out(self.state.board, 0, choosen_col) and choosen_shape in [ShapeConstant.CROSS,
-                                                                              ShapeConstant.CIRCLE]:
+        if not is_out(self.state.board, 0, choosen_col) and choosen_shape in [
+            ShapeConstant.CROSS,
+            ShapeConstant.CIRCLE,
+        ]:
             return True
         return False
 
@@ -92,7 +94,7 @@ class Game:
                     choosen_col, choosen_shape = self.bot[player_turn].find(
                         self.state, player_turn, self.config.thinking_time
                     )
-                    print(f'Runtime: {time() - start}')
+                    print(f"Runtime: {time() - start}")
 
             elif self.config.game_type == GameConstant.PVP:
                 choosen_col, choosen_shape = self.__input()
@@ -102,7 +104,7 @@ class Game:
                 choosen_col, choosen_shape = self.bot[player_turn].find(
                     self.state, player_turn, self.config.thinking_time
                 )
-                print(f'Runtime: {time() - start}')
+                print(f"Runtime: {time() - start}")
 
             if self.__is_valid(choosen_col, choosen_shape):
                 break
