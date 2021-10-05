@@ -14,12 +14,24 @@ class LocalSearch:
         self, state: State, n_player: int, thinking_time: float
     ) -> Tuple[str, str]:
         self.thinking_time = time() + thinking_time
+
+        if (self.is_empty(state.board)):
+            return (state.board.col // 2, state.players[n_player].shape)
+
         best_movement = (
             self.objective_func(state, n_player, thinking_time),
             state.players[n_player].shape,
         )
 
         return best_movement
+
+    @staticmethod
+    def is_empty(board:Board):
+        for row in range(board.row):
+            for col in range(board.col):
+                if board[row,col].shape!=ShapeConstant.BLANK:
+                    return False
+        return True
 
     @staticmethod
     def check_heuristic(board: Board, row: int, col: int):
@@ -89,13 +101,13 @@ class LocalSearch:
         column_choice = current_board.col // 2
         for i in range(current_board.col):
             # cek dari atas ke bawah bcs kyk gini strukturnya
-            for j in range(current_board.row):
+            for j in range(current_board.row-1,-1,-1):
                 # check for first piece thats not a blank in each column
                 if current_board[j, i].shape != ShapeConstant.BLANK:
                     # top most row of current column is filled
                     if j == current_board.row - 1:
                         break
-                current_mark = LocalSearch.check_heuristic(current_board, j + 1, i)
+                current_mark = LocalSearch.check_heuristic(current_board, j - 1, i)
                 if current_mark >= mark:  # change column choice
                     column_choice = i
                 mark = max(current_mark, mark)
