@@ -1,9 +1,10 @@
+from math import exp
 from time import time
 from typing import Tuple
 
 from src.constant import GameConstant, ShapeConstant
 from src.model import Board, State
-from src.utility import is_out
+from src.utility import is_out, place
 
 
 class LocalSearch:
@@ -15,26 +16,32 @@ class LocalSearch:
     ) -> Tuple[str, str]:
         self.thinking_time = time() + thinking_time
 
-        if (self.is_empty(state.board)):
+        if self.is_empty(state.board):
             return (state.board.col // 2, state.players[n_player].shape)
 
         best_movement = (
-            self.objective_func(state, n_player, thinking_time),
+            self.hill_climbing(state, n_player, thinking_time),
             state.players[n_player].shape,
         )
 
         return best_movement
 
+    def is_valid_move(state: State, piece, column):
+        return place()
+
+    def find_possible_moves(state: State):
+        print(state.board)
+
     @staticmethod
-    def is_empty(board:Board):
+    def is_empty(board: Board):
         for row in range(board.row):
             for col in range(board.col):
-                if board[row,col].shape!=ShapeConstant.BLANK:
+                if board[row, col].shape != ShapeConstant.BLANK:
                     return False
         return True
 
     @staticmethod
-    def check_heuristic(board: Board, row: int, col: int):
+    def utility_function(board: Board, row: int, col: int):
         # yes i reused check_streak, no im not ashamed
         """
         [DESC] fungsi utk dapat value heuristik piece di board[row][col]
@@ -93,22 +100,54 @@ class LocalSearch:
 
         return mark
 
+    def select_random_move():
+        pass
+
+    def calculate_delta_e(current_state, current_value, random_neighbors):
+        pass
+
     @staticmethod
-    def objective_func(state: State, n_player: int, thinking_time: float):
+    def hill_climbing(state: State, n_player: int, thinking_time: float):
         current_board = state.board
         mark = -999
         # default if all of the columns are empty (first move) prefer yg ditengah
         column_choice = current_board.col // 2
         for i in range(current_board.col):
             # cek dari atas ke bawah bcs kyk gini strukturnya
-            for j in range(current_board.row-1,-1,-1):
+            for j in range(current_board.row - 1, -1, -1):
                 # check for first piece thats not a blank in each column
                 if current_board[j, i].shape != ShapeConstant.BLANK:
                     # top most row of current column is filled
                     if j == current_board.row - 1:
                         break
-                current_mark = LocalSearch.check_heuristic(current_board, j - 1, i)
+                current_mark = LocalSearch.utility_function(current_board, j - 1, i)
                 if current_mark >= mark:  # change column choice
                     column_choice = i
                 mark = max(current_mark, mark)
         return column_choice
+
+    def simulated_annealing(self, current_state: State):
+        # self.thinking_time = 3
+        # self.max_depth = 5?
+        # allocated_time = t + 0.6 / 7
+        # Temperature = current time - allocated time
+        allocated_time = self.thinking_time / (7 * self.max_depth) + time()
+        current_value = LocalSearch.utility_function(current_state.board)
+        available_moves = []
+
+        # Iterate until the temperature is cool enough
+        while True:
+            # Check if the current time didnt exceed allocated time, temperature >= 0
+            current_temperature = allocated_time - time()
+            if current_temperature <= 0:
+                return available_moves
+            random_successor = self.select_random_move()
+            if random_successor:
+                delta_e = self.calculate_delta_e(
+                    current_state, current_value, random_successor
+                )
+                if delta_e > 0:
+                    available_moves.append(random_successor)
+                else:
+                    if exp(delta_e / current_temperature) > 0:
+                        available_moves.append(random_successor)
