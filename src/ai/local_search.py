@@ -1,6 +1,7 @@
 from math import exp
 from time import time
 from typing import Tuple
+from model.player import Player
 
 from src.constant import GameConstant, ShapeConstant
 from src.model import Board, State
@@ -126,13 +127,28 @@ class LocalSearch:
                 mark = max(current_mark, mark)
         return column_choice
 
-    def simulated_annealing(self, current_state: State):
+    @staticmethod
+    def state_heuristic(board:Board, player:Player):
+        """
+        [DESC] gives a heuristic value given a board
+        [RETURN] an integer that represents value of current state of board
+        """
+        val = -999
+        for i in range (board.row):
+            for j in range (board.col):
+                if (board[i,j].shape==player.shape and board[i,j].color==player.color):
+                    curVal = LocalSearch.utility_function(board,i,j)
+                    val = max(curVal,val)
+
+        return val
+
+    def simulated_annealing(self, current_state: State, n_player:int):
         # self.thinking_time = 3
         # self.max_depth = 5?
         # allocated_time = t + 0.6 / 7
         # Temperature = current time - allocated time
         allocated_time = self.thinking_time / (7 * self.max_depth) + time()
-        current_value = LocalSearch.utility_function(current_state.board)
+        current_value = LocalSearch.state_heuristic(current_state.board,current_state.players[n_player])
         available_moves = []
 
         # Iterate until the temperature is cool enough
