@@ -23,74 +23,80 @@ class LocalSearch:
 
         return best_movement
 
-    def countGroupHorizontal(board: Board, row: int, col: int):
+    @staticmethod
+    def count_group_horizontal(board: Board, row: int, col: int):
         # return number of pieces in a 4 group horizontally
-        countPiece = 0
+        count_piece = 0
         for i in range(col, col + 4):
             if board[row, i].shape != ShapeConstant.BLANK:
-                countPiece += 1
-        return countPiece
+                count_piece += 1
+        return count_piece
 
-    def countGroupVertical(board: Board, row: int, col: int):
+    @staticmethod
+    def count_group_vertical(board: Board, row: int, col: int):
         # return number of pieces in a 4 group horizontally
-        countPiece = 0
+        count_piece = 0
         for i in range(row, row + 4):
             if board[i, col].shape != ShapeConstant.BLANK:
-                countPiece += 1
-        return countPiece
+                count_piece += 1
+        return count_piece
 
-    def countGroupColorShapeHorizontal(
+    @staticmethod
+    def count_group_color_shape_horizontal(
             board: Board, color: ColorConstant, shape: ShapeConstant, row: int, col: int
     ):
         # return number of pieces in a group that fits either color or shape
-        countPiece = 0
+        count_piece = 0
         for i in range(col, col + 4):
             if board[row, i].shape == shape or board[row, i].color == color:
-                countPiece += 1
-        return countPiece
+                count_piece += 1
+        return count_piece
 
-    def countGroupColorShapeVertical(
+    @staticmethod
+    def count_group_color_shape_vertical(
             board: Board, color: ColorConstant, shape: ShapeConstant, row: int, col: int
     ):
         # return number of pieces in a group that fits either color or shape
-        countPiece = 0
+        count_piece = 0
         for i in range(row, row + 4):
             if board[i, col].shape == shape or board[i, col].color == color:
-                countPiece += 1
-        return countPiece
+                count_piece += 1
+        return count_piece
 
-    def evaluateGroupHorizontal(state: State, n_player: int, i: int, j: int):
+    @staticmethod
+    def evaluate_group_horizontal(state: State, n_player: int, i: int, j: int):
         # return value of group 4 horizontally on position board[i,j]
-        currentBoard = state.board
-        myPlayer = state.players[n_player]
-        enemyPlayer = state.players[
+        current_board = state.board
+        my_player = state.players[n_player]
+        enemy_player = state.players[
             (int(not n_player))
         ]  # not n_player since n_player can only be 1 or 0 will always refer to the other
-        numberOfPiece = LocalSearch.countGroupHorizontal(currentBoard, i, j)
-        countEnemyPiece = LocalSearch.countGroupColorShapeHorizontal(
-            currentBoard, enemyPlayer.color, enemyPlayer.shape, i, j
+        number_of_piece = LocalSearch.count_group_horizontal(
+            current_board, i, j)
+        count_enemy_piece = LocalSearch.count_group_color_shape_horizontal(
+            current_board, enemy_player.color, enemy_player.shape, i, j
         )
-        countPlayerPiece = LocalSearch.countGroupColorShapeHorizontal(
-            currentBoard, myPlayer.color, myPlayer.shape, i, j
+        count_player_piece = LocalSearch.count_group_color_shape_horizontal(
+            current_board, my_player.color, my_player.shape, i, j
         )
 
-        if numberOfPiece == 4:
+        if number_of_piece == 4:
             # if 4 piece of a group are full
-            if countEnemyPiece == 4:
+            if count_enemy_piece == 4:
                 return -999
             else:
                 return +999
-        elif numberOfPiece == 3:
+        elif number_of_piece == 3:
             # 3 pieces and 1 empty
-            if countEnemyPiece == 3:
+            if count_enemy_piece == 3:
                 return -999
-            elif countPlayerPiece == 3:
+            elif count_player_piece == 3:
                 return 10
-            elif countPlayerPiece == 2:
+            elif count_player_piece == 2:
                 return 4
-        elif numberOfPiece == 2:
+        elif number_of_piece == 2:
             # 2 pieces and 2 empty
-            if countEnemyPiece == 2:
+            if count_enemy_piece == 2:
                 return -4
             else:
                 return 4
@@ -102,11 +108,11 @@ class LocalSearch:
         enemy_player = state.players[
             (int(not n_player))
         ]  # not n_player since n_player can only be 1 or 0 will always refer to the other
-        number_of_piece = LocalSearch.countGroupVertical(current_board, i, j)
-        count_enemy_piece = LocalSearch.countGroupColorShapeVertical(
+        number_of_piece = LocalSearch.count_group_vertical(current_board, i, j)
+        count_enemy_piece = LocalSearch.count_group_color_shape_vertical(
             current_board, enemy_player.color, enemy_player.shape, i, j
         )
-        count_player_piece = LocalSearch.countGroupColorShapeVertical(
+        count_player_piece = LocalSearch.count_group_color_shape_vertical(
             current_board, my_player.color, my_player.shape, i, j
         )
 
@@ -144,7 +150,7 @@ class LocalSearch:
         # check horizontally 1 board
         for i in range(current_board.row):
             for j in range(0, current_board.col - 4):
-                state_value += LocalSearch.evaluateGroupHorizontal(
+                state_value += LocalSearch.evaluate_group_horizontal(
                     state, n_player, i, j
                 )
         # check vertically 1 board
@@ -211,7 +217,8 @@ class LocalSearch:
                     # top most row of current column is filled
                     if j == current_board.row - 1:
                         break
-                current_mark = LocalSearch.utility_function(current_board, j - 1, i)
+                current_mark = LocalSearch.utility_function(
+                    current_board, j - 1, i)
                 if current_mark >= mark:  # change column choice
                     column_choice = i
                 mark = max(current_mark, mark)
@@ -226,7 +233,8 @@ class LocalSearch:
         allocated_time = time() + self.thinking_time
 
         # Calculate the current state value
-        current_value = LocalSearch.state_heuristic(current_state.players[n_player])
+        current_value = LocalSearch.state_heuristic(
+            current_state.players[n_player])
 
         # Greedy Simulated Annealing -> Find best neighbor that gives highest state value
         best_move = None
