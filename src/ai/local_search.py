@@ -70,7 +70,8 @@ class LocalSearch:
         enemy_player = state.players[
             (int(not n_player))
         ]  # not n_player since n_player can only be 1 or 0 will always refer to the other
-        number_of_piece = LocalSearch.count_group_horizontal(current_board, i, j)
+        number_of_piece = LocalSearch.count_group_horizontal(
+            current_board, i, j)
         count_enemy_piece = LocalSearch.count_group_color_shape_horizontal(
             current_board, enemy_player.color, enemy_player.shape, i, j
         )
@@ -81,23 +82,44 @@ class LocalSearch:
         if number_of_piece == 4:
             # if 4 piece of a group are full
             if count_enemy_piece == 4:
-                return -999
-            else:
-                return +999
+                return -9999
+            elif count_player_piece == 4:
+                return 999
+            elif count_enemy_piece == 3:
+                # 3 enemy and 1 us == enemy is blocked
+                return 999
+            elif count_enemy_piece == 2:
+                # 2 enemy and 2 us
+                return 0
+            else:  # 1 enemy and 3 us
+                return 4
         elif number_of_piece == 3:
             # 3 pieces and 1 empty
             if count_enemy_piece == 3:
+                # 3 enemies
                 return -999
             elif count_player_piece == 3:
+                # 3 us
                 return 10
             elif count_player_piece == 2:
+                # 2 us 1 enemy
                 return 4
+            else:  # 1 us 2 enemy
+                return -4
         elif number_of_piece == 2:
             # 2 pieces and 2 empty
             if count_enemy_piece == 2:
                 return -4
-            else:
+            else:  # 1 enemy 1 us
                 return 4
+        elif number_of_piece == 1:
+            # 1 pieces and 3 empty
+            if count_enemy_piece == 1:
+                return -1
+            else:
+                return +1
+        # completely empty
+        return 0
 
     @staticmethod
     def evaluate_group_vertical(state: State, n_player: int, i: int, j: int):
@@ -117,32 +139,49 @@ class LocalSearch:
         if number_of_piece == 4:
             # if 4 piece of a group are full
             if count_enemy_piece == 4:
-                return -999
-            else:
-                return +999
+                return -9999
+            elif count_player_piece == 4:
+                return 999
+            elif count_enemy_piece == 3:
+                # 3 enemy and 1 us == enemy is blocked
+                return 999
+            elif count_enemy_piece == 2:
+                # 2 enemy and 2 us
+                return 0
+            else:  # 1 enemy and 3 us
+                return 4
         elif number_of_piece == 3:
             # 3 pieces and 1 empty
             if count_enemy_piece == 3:
+                # 3 enemies
                 return -999
             elif count_player_piece == 3:
+                # 3 us
                 return 10
             elif count_player_piece == 2:
+                # 2 us 1 enemy
                 return 4
+            else:  # 1 us 2 enemy
+                return -4
         elif number_of_piece == 2:
             # 2 pieces and 2 empty
             if count_enemy_piece == 2:
                 return -4
-            else:
+            else:  # 1 enemy 1 us
                 return 4
+        elif number_of_piece == 1:
+            # 1 pieces and 3 empty
+            if count_enemy_piece == 1:
+                return -1
+            else:
+                return +1
+        # completely empty
+        return 0
 
     @staticmethod
     def state_heuristic(state: State, n_player: int):
         # function that returns a value of heuristic of a given state
         current_board = state.board
-        my_player = state.players[n_player]
-        enemy_player = state.players[
-            (int(not n_player))
-        ]  # not n_player since n_player can only be 1 or 0 will always refer to the other
 
         state_value = 0
         # check horizontally 1 board
@@ -216,7 +255,8 @@ class LocalSearch:
                     # top most row of current column is filled
                     if j == current_board.row - 1:
                         break
-                current_mark = LocalSearch.utility_function(current_board, j - 1, i)
+                current_mark = LocalSearch.utility_function(
+                    current_board, j - 1, i)
                 if current_mark >= mark:  # change column choice
                     column_choice = i
                 mark = max(current_mark, mark)
@@ -233,7 +273,8 @@ class LocalSearch:
         # Copy dummy state and apply move to calculate delta E without breaking current state
         neighbor_state = copy.deepcopy(current_state)
         place(
-            neighbor_state, n_player, random_successor[1], str(random_successor[0])
+            neighbor_state, n_player, random_successor[1], str(
+                random_successor[0])
         )
         neighbor_value = self.state_heuristic(neighbor_state, n_player)
 
@@ -266,7 +307,8 @@ class LocalSearch:
             # Generate random move and check the difference on state value
             random_next_move = self.select_random_move(current_state, n_player)
             if random_next_move:
-                delta_e = self.calculate_delta_e(current_state, current_value, random_next_move, n_player)
+                delta_e = self.calculate_delta_e(
+                    current_state, current_value, random_next_move, n_player)
                 if delta_e > 0 or exp(delta_e / current_temperature) > random.uniform(0, 1):
                     move_choices.append([random_next_move, delta_e])
 
