@@ -6,8 +6,7 @@ from time import time
 from typing import List, Tuple
 
 from src.constant import ColorConstant, ShapeConstant, GameConstant
-from src.model import Board, State, Player, Piece
-from src.utility import place
+from src.model import Board, State, Piece
 
 
 class LocalSearch:
@@ -18,7 +17,7 @@ class LocalSearch:
             self, state: State, n_player: int, thinking_time: float
     ) -> Tuple[int, str]:
         self.thinking_time = time() + thinking_time
-        best_movement = self.find_best_move(state, n_player)
+        best_movement = self.local_search(state, n_player)
 
         return best_movement
 
@@ -242,51 +241,13 @@ class LocalSearch:
         return random.choice(valid_moves)
 
     @staticmethod
-    def hill_climbing(state: State, n_player: int):
-        current_board = state.board
-        mark = -999
-        # default if all of the columns are empty (first move) prefer yg ditengah
-        column_choice = current_board.col // 2
-        for i in range(current_board.col):
-            # cek dari atas ke bawah bcs kyk gini strukturnya
-            for j in range(current_board.row - 1, -1, -1):
-                # check for first piece thats not a blank in each column
-                if current_board[j, i].shape != ShapeConstant.BLANK:
-                    # top most row of current column is filled
-                    if j == current_board.row - 1:
-                        break
-                current_mark = LocalSearch.utility_function(
-                    current_board, j - 1, i)
-                if current_mark >= mark:  # change column choice
-                    column_choice = i
-                mark = max(current_mark, mark)
-        return column_choice
-
-    @staticmethod
-    def place(state: State, n_player: int, shape: str, col: int) -> int:
-        """
-        [DESC]
-            Function to place piece in board
-        [PARAMS]
-            state = current state in the game
-            n_player = which player (player 1 or 2)
-            shape = shape
-            col = which col
-        [RETURN]
-            -1 if placement is invalid
-            int(row) if placement is valid 
-        """
-        if state.players[n_player].quota[shape] == 0:
-            return -1
-
-        for row in range(state.board.row - 1, -1, -1):
-            if state.board[row, col].shape == ShapeConstant.BLANK:
-                piece = Piece(shape, GameConstant.PLAYER_COLOR[n_player])
-                state.board.set_piece(row, col, piece)
-                state.players[n_player].quota[shape] -= 1
-                return row
-
-        return -1
+    def make_dummy_move(current_state: State, n_player: int, shape: str, col: int):
+        neighbor_state = copy.deepcopy(current_state)
+        piece = Piece(shape, GameConstant.PLAYER_COLOR[n_player])
+        for row in range(neighbor_state.board.row - 1, -1, -1):
+            if neighbor_state.board[row, col].shape == ShapeConstant.BLANK:
+                neighbor_state.board.set_piece(row, col, piece)
+                return neighbor_state
 
     # Calculate delta e, difference of current and next state value
     def calculate_delta_e(
@@ -296,16 +257,32 @@ class LocalSearch:
             random_successor: Tuple[int, str],
             n_player: int,
     ):
-        # Copy dummy state and apply move to calculate delta E without breaking current state
-        neighbor_state = copy.deepcopy(current_state)
-        try_place = LocalSearch.place(  # function di utility gabisa
-            neighbor_state, n_player, random_successor[1],
-            random_successor[0]
-        )
-        if try_place != -1:
-            neighbor_value = self.state_heuristic(neighbor_state, n_player)
+        # Copy dummy state and apply dummy move to calculate delta E without breaking current state
+        neighbor_state = LocalSearch.make_dummy_move(current_state, n_player, random_successor[1], random_successor[0])
+        neighbor_value = self.state_heuristic(neighbor_state, n_player)
 
         return neighbor_value - current_value
+
+    # Hill Climbing: Sideways Move Variant with modifications
+    # The algorithm is fast enough for thinking time of 3 seconds
+    def hill_climbing(self, current_state: State, n_player: int) -> Tuple[int, str]:
+        # Container for all move evaluation and list of valid moves
+        valid_moves = self.get_valid_moves(current_state, n_player)
+        move_evaluations = []
+
+        # Iterate while current time doesn't exceed thinking time
+        for valid_move in valid_moves:
+            # Evaluate each valid moves' value by applying dummy move to neighbor state
+            neighbor_state = LocalSearch.make_dummy_move(current_state, n_player, valid_move[1], valid_move[0])
+            neighbor_value = self.state_heuristic(neighbor_state, n_player)
+            move_evaluations.append([valid_move, neighbor_value])
+
+        # Always return move with maximum values, doesn't matter if it's < current value
+        # Automatically do sideways move if the maximum value is = current value
+        if move_evaluations:
+            return max(move_evaluations, key=lambda x: x[1])[0]
+        else:
+            return self.select_random_move(current_state, n_player)
 
     # Local search method using Simulated Annealing with modifications
     def simulated_annealing(self, current_state: State, n_player: int) -> Tuple[int, str]:
@@ -316,31 +293,38 @@ class LocalSearch:
         current_value = self.state_heuristic(current_state, n_player)
 
         # Greedy Simulated Annealing -> Find best neighbor that gives highest state value
-        move_choices = []
+        # Initialize value for comparison
+        move_choice = (None, None)
+        move_value = -999
+        move_probability = random.uniform(0, 1)
 
         # Iterate until the temperature is cool enough
         while True:
             # Current temperature = current time - allocated time
             # Check if the current time didn't exceed allocated time, temperature >= 0
             current_temperature = allocated_time - time()
-            if current_temperature <= 0:
+            if current_temperature <= 10e-4:
                 # If there are move choices, select the one with maximum differences with current state
                 # Else select a random valid move
-                if move_choices:
-                    return max(move_choices, key=lambda x: x[1])[0]
+                if move_choice:
+                    return move_choice
                 else:
                     return self.select_random_move(current_state, n_player)
 
             # Generate random move and check the difference on state value
             random_next_move = self.select_random_move(current_state, n_player)
             if random_next_move:
-                delta_e = self.calculate_delta_e(
-                    current_state, current_value, random_next_move, n_player)
-                if delta_e > 0 or exp(delta_e / current_temperature) > random.uniform(0, 1):
-                    move_choices.append([random_next_move, delta_e])
+                delta_e = self.calculate_delta_e(current_state, current_value, random_next_move, n_player)
+                if delta_e > 0:
+                    if delta_e > move_value:
+                        move_choice = random_next_move
+                        move_value = delta_e
+                elif exp(delta_e / current_temperature) > move_probability:
+                    move_choice = random_next_move
+                    move_value = delta_e
 
     # Wrapper to find best move based on algorithm choice
-    def find_best_move(self, current_state: State, n_player: int, algorithm="SA") -> Tuple[int, str]:
+    def local_search(self, current_state: State, n_player: int, algorithm="SA") -> Tuple[int, str]:
         if algorithm == "SA":
             return self.simulated_annealing(current_state, n_player)
         elif algorithm == "HC":
