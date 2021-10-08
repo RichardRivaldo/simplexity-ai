@@ -5,8 +5,8 @@ from math import exp
 from time import time
 from typing import List, Tuple
 
-from src.constant import ColorConstant, ShapeConstant
-from src.model import Board, State
+from src.constant import ColorConstant, ShapeConstant, GameConstant
+from src.model import Board, State, Player, Piece
 from src.utility import place
 
 
@@ -82,7 +82,7 @@ class LocalSearch:
         if number_of_piece == 4:
             # if 4 piece of a group are full
             if count_enemy_piece == 4:
-                return -9999
+                return -99999
             elif count_player_piece == 4:
                 return 999
             elif count_enemy_piece == 3:
@@ -97,7 +97,7 @@ class LocalSearch:
             # 3 pieces and 1 empty
             if count_enemy_piece == 3:
                 # 3 enemies
-                return -999
+                return -99999
             elif count_player_piece == 3:
                 # 3 us
                 return 10
@@ -139,7 +139,7 @@ class LocalSearch:
         if number_of_piece == 4:
             # if 4 piece of a group are full
             if count_enemy_piece == 4:
-                return -9999
+                return -99999
             elif count_player_piece == 4:
                 return 999
             elif count_enemy_piece == 3:
@@ -154,7 +154,7 @@ class LocalSearch:
             # 3 pieces and 1 empty
             if count_enemy_piece == 3:
                 # 3 enemies
-                return -999
+                return -99999
             elif count_player_piece == 3:
                 # 3 us
                 return 10
@@ -194,7 +194,7 @@ class LocalSearch:
         for i in range(current_board.col):
             for j in range(0, current_board.row - 4):
                 state_value += LocalSearch.evaluate_group_vertical(
-                    state, n_player, i, j
+                    state, n_player, j, i
                 )
 
         return state_value
@@ -262,6 +262,32 @@ class LocalSearch:
                 mark = max(current_mark, mark)
         return column_choice
 
+    @staticmethod
+    def place(state: State, n_player: int, shape: str, col: int) -> int:
+        """
+        [DESC]
+            Function to place piece in board
+        [PARAMS]
+            state = current state in the game
+            n_player = which player (player 1 or 2)
+            shape = shape
+            col = which col
+        [RETURN]
+            -1 if placement is invalid
+            int(row) if placement is valid 
+        """
+        if state.players[n_player].quota[shape] == 0:
+            return -1
+
+        for row in range(state.board.row - 1, -1, -1):
+            if state.board[row, col].shape == ShapeConstant.BLANK:
+                piece = Piece(shape, GameConstant.PLAYER_COLOR[n_player])
+                state.board.set_piece(row, col, piece)
+                state.players[n_player].quota[shape] -= 1
+                return row
+
+        return -1
+
     # Calculate delta e, difference of current and next state value
     def calculate_delta_e(
             self,
@@ -272,11 +298,12 @@ class LocalSearch:
     ):
         # Copy dummy state and apply move to calculate delta E without breaking current state
         neighbor_state = copy.deepcopy(current_state)
-        place(
-            neighbor_state, n_player, random_successor[1], str(
-                random_successor[0])
+        try_place = LocalSearch.place(  # function di utility gabisa
+            neighbor_state, n_player, random_successor[1],
+            random_successor[0]
         )
-        neighbor_value = self.state_heuristic(neighbor_state, n_player)
+        if try_place != -1:
+            neighbor_value = self.state_heuristic(neighbor_state, n_player)
 
         return neighbor_value - current_value
 
