@@ -3,22 +3,21 @@ import random
 from itertools import product
 from math import exp
 from time import time
-from typing import List, Tuple
+from typing import List
 
-from src.constant import ColorConstant, ShapeConstant, GameConstant
-from src.model import Board, State, Piece
+from src.constant import ColorConstant
 from src.utility import *
 
 
 class LocalSearch:
-    def __init__(self):
-        pass
+    def __init__(self, algorithm="SA"):
+        self.algorithm = algorithm
 
     def find(
             self, state: State, n_player: int, thinking_time: float
     ) -> Tuple[int, str]:
         self.thinking_time = time() + thinking_time
-        best_movement = self.local_search(state, n_player)
+        best_movement = self.local_search(state, n_player, self.algorithm)
 
         return best_movement
 
@@ -52,8 +51,8 @@ class LocalSearch:
                     return 0  # doesnt count if it went out
                 if (board[row_, col_].shape != ShapeConstant.BLANK):
                     count_piece += 1
-                row_ = row_+1
-                col_ = col_+1
+                row_ = row_ + 1
+                col_ = col_ + 1
         else:  # checks from right to left, dari atas ke bawah diagonal
             row_ = row
             col_ = col
@@ -62,8 +61,8 @@ class LocalSearch:
                     return 0  # doesnt count if it went out
                 if (board[row_, col_].shape != ShapeConstant.BLANK):
                     count_piece += 1
-                row_ = row_-1
-                col_ = col_+1
+                row_ = row_ - 1
+                col_ = col_ + 1
         return count_piece
 
     @staticmethod
@@ -102,8 +101,8 @@ class LocalSearch:
                     return 0  # doesnt count if it went out
                 if (board[row_, col_].color == color or board[row_, col_].shape == shape):
                     count_piece += 1
-                row_ = row_+1
-                col_ = col_+1
+                row_ = row_ + 1
+                col_ = col_ + 1
         else:  # checks from right to left, dari atas ke bawah diagonal
             row_ = row
             col_ = col
@@ -112,8 +111,8 @@ class LocalSearch:
                     return 0  # doesnt count if it went out
                 if (board[row_, col_].color == color or board[row_, col_].shape == shape):
                     count_piece += 1
-                row_ = row_-1
-                col_ = col_+1
+                row_ = row_ - 1
+                col_ = col_ + 1
         return count_piece
 
     @staticmethod
@@ -138,10 +137,10 @@ class LocalSearch:
             if count_enemy_piece == 4:
                 return -99999
             elif count_player_piece == 4:
-                return 999
+                return 99999
             elif count_enemy_piece == 3:
                 # 3 enemy and 1 us == enemy is blocked
-                return 999
+                return 99999
             elif count_enemy_piece == 2:
                 # 2 enemy and 2 us
                 return 0
@@ -195,10 +194,10 @@ class LocalSearch:
             if count_enemy_piece == 4:
                 return -99999
             elif count_player_piece == 4:
-                return 999
+                return 99999
             elif count_enemy_piece == 3:
                 # 3 enemy and 1 us == enemy is blocked
-                return 999
+                return 99999
             elif count_enemy_piece == 2:
                 # 2 enemy and 2 us
                 return 0
@@ -252,10 +251,10 @@ class LocalSearch:
             if count_enemy_piece == 4:
                 return -99999
             elif count_player_piece == 4:
-                return 999
+                return 99999
             elif count_enemy_piece == 3:
                 # 3 enemy and 1 us == enemy is blocked
-                return 999
+                return 99999
             elif count_enemy_piece == 2:
                 # 2 enemy and 2 us
                 return 0
@@ -419,7 +418,7 @@ class LocalSearch:
         # Greedy Simulated Annealing -> Find best neighbor that gives highest state value
         # Initialize value for comparison
         move_choice = (None, None)
-        move_value = -999
+        move_value = -99999
         move_probability = random.uniform(0, 1)
 
         # Iterate until the temperature is cool enough
@@ -449,7 +448,7 @@ class LocalSearch:
                     move_value = delta_e
 
     # Wrapper to find best move based on algorithm choice
-    def local_search(self, current_state: State, n_player: int, algorithm="SA") -> Tuple[int, str]:
+    def local_search(self, current_state: State, n_player: int, algorithm: str) -> Tuple[int, str]:
         if algorithm == "SA":
             return self.simulated_annealing(current_state, n_player)
         elif algorithm == "HC":
