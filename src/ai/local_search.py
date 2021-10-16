@@ -7,6 +7,7 @@ from typing import List, Tuple
 
 from src.constant import ColorConstant, ShapeConstant, GameConstant
 from src.model import Board, State, Piece
+from src.utility import *
 
 
 class LocalSearch:
@@ -40,6 +41,32 @@ class LocalSearch:
         return count_piece
 
     @staticmethod
+    def count_group_diagonal(board: Board, row: int, col: int, direction: bool):
+        # checks a group of 4 in board[row,col] returns number of pieces
+        count_piece = 0
+        if (direction):  # check from left to right, dari atas ke bawah diagonal
+            row_ = row
+            col_ = col
+            for i in range(4):
+                if (is_out(board, row_, col_)):
+                    return 0  # doesnt count if it went out
+                if (board[row_, col_].shape != ShapeConstant.BLANK):
+                    count_piece += 1
+                row_ = row_+1
+                col_ = col_+1
+        else:  # checks from right to left, dari atas ke bawah diagonal
+            row_ = row
+            col_ = col
+            for i in range(4):
+                if (is_out(board, row_, col_)):
+                    return 0  # doesnt count if it went out
+                if (board[row_, col_].shape != ShapeConstant.BLANK):
+                    count_piece += 1
+                row_ = row_-1
+                col_ = col_+1
+        return count_piece
+
+    @staticmethod
     def count_group_color_shape_horizontal(
             board: Board, color: ColorConstant, shape: ShapeConstant, row: int, col: int
     ):
@@ -59,6 +86,34 @@ class LocalSearch:
         for i in range(row, row + 4):
             if board[i, col].shape == shape or board[i, col].color == color:
                 count_piece += 1
+        return count_piece
+
+    @staticmethod
+    def count_group_color_shape_diagonal(
+            board: Board, color: ColorConstant, shape: ShapeConstant, row: int, col: int, direction: bool
+    ):
+        # checks a group of 4 in board[row,col] returns number of pieces that fits either color or shape diagonally
+        count_piece = 0
+        if (direction):  # check from left to right, dari atas ke bawah diagonal
+            row_ = row
+            col_ = col
+            for i in range(4):
+                if (is_out(board, row_, col_)):
+                    return 0  # doesnt count if it went out
+                if (board[row_, col_].color == color or board[row_, col_].shape == shape):
+                    count_piece += 1
+                row_ = row_+1
+                col_ = col_+1
+        else:  # checks from right to left, dari atas ke bawah diagonal
+            row_ = row
+            col_ = col
+            for i in range(4):
+                if (is_out(board, row_, col_)):
+                    return 0  # doesnt count if it went out
+                if (board[row_, col_].color == color or board[row_, col_].shape == shape):
+                    count_piece += 1
+                row_ = row_-1
+                col_ = col_+1
         return count_piece
 
     @staticmethod
@@ -178,6 +233,63 @@ class LocalSearch:
         return 0
 
     @staticmethod
+    def evaluate_group_diagonal(state: State, n_player: int, i: int, j: int, direction: bool):
+        current_board = state.board
+        my_player = state.players[n_player]
+        enemy_player = state.players[
+            (int(not n_player))
+        ]  # not n_player since n_player can only be 1 or 0 will always refer to the other
+        number_of_piece = LocalSearch.count_group_diagonal(
+            current_board, i, j, direction)
+        count_enemy_piece = LocalSearch.count_group_color_shape_diagonal(
+            current_board, enemy_player.color, enemy_player.shape, i, j, direction
+        )
+        count_player_piece = LocalSearch.count_group_color_shape_diagonal(
+            current_board, my_player.color, my_player.shape, i, j, direction
+        )
+        if number_of_piece == 4:
+            # if 4 piece of a group are full
+            if count_enemy_piece == 4:
+                return -99999
+            elif count_player_piece == 4:
+                return 999
+            elif count_enemy_piece == 3:
+                # 3 enemy and 1 us == enemy is blocked
+                return 999
+            elif count_enemy_piece == 2:
+                # 2 enemy and 2 us
+                return 0
+            else:  # 1 enemy and 3 us
+                return 4
+        elif number_of_piece == 3:
+            # 3 pieces and 1 empty
+            if count_enemy_piece == 3:
+                # 3 enemies
+                return -99999
+            elif count_player_piece == 3:
+                # 3 us
+                return 10
+            elif count_player_piece == 2:
+                # 2 us 1 enemy
+                return 4
+            else:  # 1 us 2 enemy
+                return -4
+        elif number_of_piece == 2:
+            # 2 pieces and 2 empty
+            if count_enemy_piece == 2:
+                return -4
+            else:  # 1 enemy 1 us
+                return 4
+        elif number_of_piece == 1:
+            # 1 pieces and 3 empty
+            if count_enemy_piece == 1:
+                return -1
+            else:
+                return +1
+        # completely empty
+        return 0
+
+    @staticmethod
     def state_heuristic(state: State, n_player: int):
         # function that returns a value of heuristic of a given state
         current_board = state.board
@@ -194,6 +306,16 @@ class LocalSearch:
             for j in range(0, current_board.row - 4):
                 state_value += LocalSearch.evaluate_group_vertical(
                     state, n_player, j, i
+                )
+
+        # check diagonally
+        for i in range(current_board.row):
+            for j in range(current_board.col):
+                state_value += LocalSearch.evaluate_group_diagonal(
+                    state, n_player, i, j, True
+                )
+                state_value += LocalSearch.evaluate_group_diagonal(
+                    state, n_player, i, j, False
                 )
 
         return state_value
@@ -258,7 +380,8 @@ class LocalSearch:
             n_player: int,
     ):
         # Copy dummy state and apply dummy move to calculate delta E without breaking current state
-        neighbor_state = LocalSearch.make_dummy_move(current_state, n_player, random_successor[1], random_successor[0])
+        neighbor_state = LocalSearch.make_dummy_move(
+            current_state, n_player, random_successor[1], random_successor[0])
         neighbor_value = self.state_heuristic(neighbor_state, n_player)
 
         return neighbor_value - current_value
@@ -273,7 +396,8 @@ class LocalSearch:
         # Iterate while current time doesn't exceed thinking time
         for valid_move in valid_moves:
             # Evaluate each valid moves' value by applying dummy move to neighbor state
-            neighbor_state = LocalSearch.make_dummy_move(current_state, n_player, valid_move[1], valid_move[0])
+            neighbor_state = LocalSearch.make_dummy_move(
+                current_state, n_player, valid_move[1], valid_move[0])
             neighbor_value = self.state_heuristic(neighbor_state, n_player)
             move_evaluations.append([valid_move, neighbor_value])
 
@@ -314,7 +438,8 @@ class LocalSearch:
             # Generate random move and check the difference on state value
             random_next_move = self.select_random_move(current_state, n_player)
             if random_next_move:
-                delta_e = self.calculate_delta_e(current_state, current_value, random_next_move, n_player)
+                delta_e = self.calculate_delta_e(
+                    current_state, current_value, random_next_move, n_player)
                 if delta_e > 0:
                     if delta_e > move_value:
                         move_choice = random_next_move
