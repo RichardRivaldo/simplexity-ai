@@ -3,8 +3,9 @@ from os import stat
 import random
 from time import time
 
-from src.constant import ShapeConstant, GameConstant
+from src.constant import ShapeConstant, GameConstant, ColorConstant
 from src.model import State, Board, Player, Piece
+# from src.utility import is_out
 from itertools import product
 
 from typing import Tuple, List
@@ -15,6 +16,7 @@ class Minimax:
     DRAW = "DRAW"
     WIN = "WIN"
     LOSE = "LOSE"
+    i = 0
 
     def __init__(self):
         pass
@@ -25,6 +27,7 @@ class Minimax:
         # best_movement = (random.randint(0, state.board.col - 1), random.choice([ShapeConstant.CROSS, ShapeConstant.CIRCLE])) #minimax algorithm
 
         # start_time = time()        
+        Minimax.i = 0
         best_movement = Minimax.MinimaxAlphaBetaPruning(state, -9999, 9999, True, n_player, time() + thinking_time)[1] # minimax algorithm
 
         # neighbor_state = copy.deepcopy(state)
@@ -39,8 +42,9 @@ class Minimax:
         # else:
         #     print("INVALID")
         
-        print("move ---------------------")
-        print(best_movement)
+        # print("move ---------------------")
+        # print(best_movement)
+        # test = input("-------------")
         return best_movement
 
 
@@ -111,20 +115,44 @@ class Minimax:
         if Minimax.is_game_over(outcome):
             # print(Minimax.utility_function(state, outcome))
             # test = input("Ujung gan")
+            # print("ujung gan")
             return (Minimax.utility_function(state, outcome), ())
 
         if white_player:
             maxVal = -9999 # negative infinity
             
             valid_moves = Minimax.get_valid_moves(state, n_player)
-            random.shuffle(valid_moves)
+            
+            # random.shuffle(valid_moves) -> approach 1
+
+            # local search -> approach 2\
+            move_evaluations = []
+            for move in valid_moves:
+                neighbor_state = copy.deepcopy(state)
+                Minimax.place(neighbor_state, n_player, move[1], move[0])
+
+                neighbor_value = Minimax.state_heuristic(neighbor_state, n_player)
+
+                move_evaluations.append([move, neighbor_value])
+            
+            move_evaluations.sort(key=lambda x: x[1], reverse=True)
+
+            if Minimax.i == 0:
+                for m in move_evaluations:
+                    print(m)
+                print("++++++++++++++++++++++++++++++++++++ white")
+            
+            Minimax.i += 1
+            # test = input("done sort")
+
             maxMove = None
             
             # For each child of current state
-            for move in valid_moves:
+            for move_evaluation in move_evaluations:
+                move = move_evaluation[0]
                 if (time()) > thinking_time:
                     print("HEHE")
-                    return (maxVal, random.choice(valid_moves) if maxMove == None else maxMove)
+                    return (maxVal, move_evaluations[0][0] if maxMove == None else maxMove)
                 neighbor_state = copy.deepcopy(state)
                 try_place = Minimax.place(neighbor_state, n_player, move[1], move[0])
                 
@@ -148,13 +176,34 @@ class Minimax:
             
             black_n_player = n_player ^ 1
             valid_moves = Minimax.get_valid_moves(state, black_n_player)
-            random.shuffle(valid_moves)
+
+            # random.shuffle(valid_moves) -> approach 1
+
+            # local search -> approach 2
+            move_evaluations = []
+            for move in valid_moves:
+                neighbor_state = copy.deepcopy(state)
+                Minimax.place(neighbor_state, black_n_player, move[1], move[0])
+
+                neighbor_value = Minimax.state_heuristic(neighbor_state, black_n_player)
+
+                move_evaluations.append([move, neighbor_value])
+            
+            move_evaluations.sort(key=lambda x: x[1], reverse=True)            
+
+            # for m in move_evaluations:
+            #     print(m)
+            # print("++++++++++++++++++++++++++++++++++++ black")
+            
+            # test = input("---------------")
+
             minMove = None 
             
-            for move in valid_moves:
+            for move_evaluation in move_evaluations:
+                move = move_evaluation[0]
                 if (time()) > thinking_time:
                     print("HEHE")
-                    return (minVal, random.choice(valid_moves) if minMove == None else minMove)
+                    return (minVal, move_evaluations[0][0] if minMove == None else minMove)
                 neighbor_state = copy.deepcopy(state)
                 Minimax.place(neighbor_state, black_n_player, move[1], move[0])
                 tempResult = Minimax.MinimaxAlphaBetaPruning(neighbor_state, alpha, beta, not white_player, n_player, thinking_time)
@@ -356,6 +405,7 @@ class Minimax:
         return available_pieces
 
     # Get all valid pairs of column and shape as valid moves
+    @staticmethod
     def get_valid_moves(
             current_state: State, n_player: int
     ) -> List[Tuple[int, str]]:
@@ -364,6 +414,302 @@ class Minimax:
 
         return list(product(valid_columns, valid_shape))
 
+    @staticmethod
+    def state_heuristic(state: State, n_player: int):
+        # function that returns a value of heuristic of a given state
+        current_board = state.board
 
+        state_value = 0
+        # check horizontally 1 board
+        for i in range(current_board.row):
+            for j in range(0, current_board.col - 4):
+                state_value += Minimax.evaluate_group_horizontal(
+                    state, n_player, i, j
+                )
+        # check vertically 1 board
+        for i in range(current_board.col):
+            for j in range(0, current_board.row - 4):
+                state_value += Minimax.evaluate_group_vertical(
+                    state, n_player, j, i
+                )
 
+        # check diagonally
+        for i in range(current_board.row):
+            for j in range(current_board.col):
+                state_value += Minimax.evaluate_group_diagonal(
+                    state, n_player, i, j, True
+                )
+                state_value += Minimax.evaluate_group_diagonal(
+                    state, n_player, i, j, False
+                )
+
+        return state_value
+    
+    @staticmethod
+    def count_group_horizontal(board: Board, row: int, col: int):
+        # return number of pieces in a 4 group horizontally
+        count_piece = 0
+        for i in range(col, col + 4):
+            if board[row, i].shape != ShapeConstant.BLANK:
+                count_piece += 1
+        return count_piece
+
+    @staticmethod
+    def count_group_vertical(board: Board, row: int, col: int):
+        # return number of pieces in a 4 group horizontally
+        count_piece = 0
+        for i in range(row, row + 4):
+            if board[i, col].shape != ShapeConstant.BLANK:
+                count_piece += 1
+        return count_piece
+
+    @staticmethod
+    def count_group_diagonal(board: Board, row: int, col: int, direction: bool):
+        # checks a group of 4 in board[row,col] returns number of pieces
+        count_piece = 0
+        if (direction):  # check from left to right, dari atas ke bawah diagonal
+            row_ = row
+            col_ = col
+            for i in range(4):
+                if (Minimax.is_out(board, row_, col_)):
+                    return 0  # doesnt count if it went out
+                if (board[row_, col_].shape != ShapeConstant.BLANK):
+                    count_piece += 1
+                row_ = row_ + 1
+                col_ = col_ + 1
+        else:  # checks from right to left, dari atas ke bawah diagonal
+            row_ = row
+            col_ = col
+            for i in range(4):
+                if (Minimax.is_out(board, row_, col_)):
+                    return 0  # doesnt count if it went out
+                if (board[row_, col_].shape != ShapeConstant.BLANK):
+                    count_piece += 1
+                row_ = row_ - 1
+                col_ = col_ + 1
+        return count_piece
+
+    @staticmethod
+    def count_group_color_shape_horizontal(
+            board: Board, color: ColorConstant, shape: ShapeConstant, row: int, col: int
+    ):
+        # return number of pieces in a group that fits either color or shape
+        count_piece = 0
+        for i in range(col, col + 4):
+            if board[row, i].shape == shape or board[row, i].color == color:
+                count_piece += 1
+        return count_piece
+
+    @staticmethod
+    def count_group_color_shape_vertical(
+            board: Board, color: ColorConstant, shape: ShapeConstant, row: int, col: int
+    ):
+        # return number of pieces in a group that fits either color or shape
+        count_piece = 0
+        for i in range(row, row + 4):
+            if board[i, col].shape == shape or board[i, col].color == color:
+                count_piece += 1
+        return count_piece
+
+    @staticmethod
+    def count_group_color_shape_diagonal(
+            board: Board, color: ColorConstant, shape: ShapeConstant, row: int, col: int, direction: bool
+    ):
+        # checks a group of 4 in board[row,col] returns number of pieces that fits either color or shape diagonally
+        count_piece = 0
+        if (direction):  # check from left to right, dari atas ke bawah diagonal
+            row_ = row
+            col_ = col
+            for i in range(4):
+                if (Minimax.is_out(board, row_, col_)):
+                    return 0  # doesnt count if it went out
+                if (board[row_, col_].color == color or board[row_, col_].shape == shape):
+                    count_piece += 1
+                row_ = row_ + 1
+                col_ = col_ + 1
+        else:  # checks from right to left, dari atas ke bawah diagonal
+            row_ = row
+            col_ = col
+            for i in range(4):
+                if (Minimax.is_out(board, row_, col_)):
+                    return 0  # doesnt count if it went out
+                if (board[row_, col_].color == color or board[row_, col_].shape == shape):
+                    count_piece += 1
+                row_ = row_ - 1
+                col_ = col_ + 1
+        return count_piece
+    
+    @staticmethod
+    def evaluate_group_horizontal(state: State, n_player: int, i: int, j: int):
+        # return value of group 4 horizontally on position board[i,j]
+        current_board = state.board
+        my_player = state.players[n_player]
+        enemy_player = state.players[
+            (int(not n_player))
+        ]  # not n_player since n_player can only be 1 or 0 will always refer to the other
+        number_of_piece = Minimax.count_group_horizontal(
+            current_board, i, j)
+        count_enemy_piece = Minimax.count_group_color_shape_horizontal(
+            current_board, enemy_player.color, enemy_player.shape, i, j
+        )
+        count_player_piece = Minimax.count_group_color_shape_horizontal(
+            current_board, my_player.color, my_player.shape, i, j
+        )
+
+        if number_of_piece == 4:
+            # if 4 piece of a group are full
+            if count_enemy_piece == 4:
+                return -99999
+            elif count_player_piece == 4:
+                return 99999
+            elif count_enemy_piece == 3:
+                # 3 enemy and 1 us == enemy is blocked
+                return 99999
+            elif count_enemy_piece == 2:
+                # 2 enemy and 2 us
+                return 0
+            else:  # 1 enemy and 3 us
+                return 4
+        elif number_of_piece == 3:
+            # 3 pieces and 1 empty
+            if count_enemy_piece == 3:
+                # 3 enemies
+                return -99999
+            elif count_player_piece == 3:
+                # 3 us
+                return 10
+            elif count_player_piece == 2:
+                # 2 us 1 enemy
+                return 4
+            else:  # 1 us 2 enemy
+                return -4
+        elif number_of_piece == 2:
+            # 2 pieces and 2 empty
+            if count_enemy_piece == 2:
+                return -4
+            else:  # 1 enemy 1 us
+                return 4
+        elif number_of_piece == 1:
+            # 1 pieces and 3 empty
+            if count_enemy_piece == 1:
+                return -1
+            else:
+                return +1
+        # completely empty
+        return 0
+
+    @staticmethod
+    def evaluate_group_vertical(state: State, n_player: int, i: int, j: int):
+        current_board = state.board
+        my_player = state.players[n_player]
+        enemy_player = state.players[
+            (int(not n_player))
+        ]  # not n_player since n_player can only be 1 or 0 will always refer to the other
+        number_of_piece = Minimax.count_group_vertical(current_board, i, j)
+        count_enemy_piece = Minimax.count_group_color_shape_vertical(
+            current_board, enemy_player.color, enemy_player.shape, i, j
+        )
+        count_player_piece = Minimax.count_group_color_shape_vertical(
+            current_board, my_player.color, my_player.shape, i, j
+        )
+
+        if number_of_piece == 4:
+            # if 4 piece of a group are full
+            if count_enemy_piece == 4:
+                return -99999
+            elif count_player_piece == 4:
+                return 99999
+            elif count_enemy_piece == 3:
+                # 3 enemy and 1 us == enemy is blocked
+                # print("sini")
+                return 99999
+            elif count_enemy_piece == 2:
+                # 2 enemy and 2 us
+                return 0
+            else:  # 1 enemy and 3 us
+                return 4
+        elif number_of_piece == 3:
+            # 3 pieces and 1 empty
+            if count_enemy_piece == 3:
+                # 3 enemies
+                return -99999
+            elif count_player_piece == 3:
+                # 3 us
+                return 10
+            elif count_player_piece == 2:
+                # 2 us 1 enemy
+                return 4
+            else:  # 1 us 2 enemy
+                return -4
+        elif number_of_piece == 2:
+            # 2 pieces and 2 empty
+            if count_enemy_piece == 2:
+                return -4
+            else:  # 1 enemy 1 us
+                return 4
+        elif number_of_piece == 1:
+            # 1 pieces and 3 empty
+            if count_enemy_piece == 1:
+                return -1
+            else:
+                return +1
+        # completely empty
+        return 0
+
+    @staticmethod
+    def evaluate_group_diagonal(state: State, n_player: int, i: int, j: int, direction: bool):
+        current_board = state.board
+        my_player = state.players[n_player]
+        enemy_player = state.players[
+            (int(not n_player))
+        ]  # not n_player since n_player can only be 1 or 0 will always refer to the other
+        number_of_piece = Minimax.count_group_diagonal(
+            current_board, i, j, direction)
+        count_enemy_piece = Minimax.count_group_color_shape_diagonal(
+            current_board, enemy_player.color, enemy_player.shape, i, j, direction
+        )
+        count_player_piece = Minimax.count_group_color_shape_diagonal(
+            current_board, my_player.color, my_player.shape, i, j, direction
+        )
+        if number_of_piece == 4:
+            # if 4 piece of a group are full
+            if count_enemy_piece == 4:
+                return -99999
+            elif count_player_piece == 4:
+                return 99999
+            elif count_enemy_piece == 3:
+                # 3 enemy and 1 us == enemy is blocked
+                return 99999
+            elif count_enemy_piece == 2:
+                # 2 enemy and 2 us
+                return 0
+            else:  # 1 enemy and 3 us
+                return 4
+        elif number_of_piece == 3:
+            # 3 pieces and 1 empty
+            if count_enemy_piece == 3:
+                # 3 enemies
+                return -99999
+            elif count_player_piece == 3:
+                # 3 us
+                return 10
+            elif count_player_piece == 2:
+                # 2 us 1 enemy
+                return 4
+            else:  # 1 us 2 enemy
+                return -4
+        elif number_of_piece == 2:
+            # 2 pieces and 2 empty
+            if count_enemy_piece == 2:
+                return -4
+            else:  # 1 enemy 1 us
+                return 4
+        elif number_of_piece == 1:
+            # 1 pieces and 3 empty
+            if count_enemy_piece == 1:
+                return -1
+            else:
+                return +1
+        # completely empty
+        return 0
 
