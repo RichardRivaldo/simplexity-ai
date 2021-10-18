@@ -1,5 +1,5 @@
-import copy
 import random
+from copy import deepcopy
 from itertools import product
 from math import exp
 from time import time
@@ -9,7 +9,7 @@ from src.constant import ColorConstant
 from src.utility import *
 
 
-class LocalSearch:
+class LocalSearch7:
     def __init__(self, algorithm="SA"):
         self.algorithm = algorithm
 
@@ -43,13 +43,13 @@ class LocalSearch:
     def count_group_diagonal(board: Board, row: int, col: int, direction: bool):
         # checks a group of 4 in board[row,col] returns number of pieces
         count_piece = 0
-        if (direction):  # check from left to right, dari atas ke bawah diagonal
+        if direction:  # check from left to right, dari atas ke bawah diagonal
             row_ = row
             col_ = col
             for i in range(4):
-                if (is_out(board, row_, col_)):
+                if is_out(board, row_, col_):
                     return 0  # doesnt count if it went out
-                if (board[row_, col_].shape != ShapeConstant.BLANK):
+                if board[row_, col_].shape != ShapeConstant.BLANK:
                     count_piece += 1
                 row_ = row_ + 1
                 col_ = col_ + 1
@@ -57,9 +57,9 @@ class LocalSearch:
             row_ = row
             col_ = col
             for i in range(4):
-                if (is_out(board, row_, col_)):
+                if is_out(board, row_, col_):
                     return 0  # doesnt count if it went out
-                if (board[row_, col_].shape != ShapeConstant.BLANK):
+                if board[row_, col_].shape != ShapeConstant.BLANK:
                     count_piece += 1
                 row_ = row_ - 1
                 col_ = col_ + 1
@@ -93,13 +93,13 @@ class LocalSearch:
     ):
         # checks a group of 4 in board[row,col] returns number of pieces that fits either color or shape diagonally
         count_piece = 0
-        if (direction):  # check from left to right, dari atas ke bawah diagonal
+        if direction:  # check from left to right, dari atas ke bawah diagonal
             row_ = row
             col_ = col
             for i in range(4):
-                if (is_out(board, row_, col_)):
+                if is_out(board, row_, col_):
                     return 0  # doesnt count if it went out
-                if (board[row_, col_].color == color or board[row_, col_].shape == shape):
+                if board[row_, col_].color == color or board[row_, col_].shape == shape:
                     count_piece += 1
                 row_ = row_ + 1
                 col_ = col_ + 1
@@ -107,9 +107,9 @@ class LocalSearch:
             row_ = row
             col_ = col
             for i in range(4):
-                if (is_out(board, row_, col_)):
+                if is_out(board, row_, col_):
                     return 0  # doesnt count if it went out
-                if (board[row_, col_].color == color or board[row_, col_].shape == shape):
+                if board[row_, col_].color == color or board[row_, col_].shape == shape:
                     count_piece += 1
                 row_ = row_ - 1
                 col_ = col_ + 1
@@ -123,12 +123,12 @@ class LocalSearch:
         enemy_player = state.players[
             (int(not n_player))
         ]  # not n_player since n_player can only be 1 or 0 will always refer to the other
-        number_of_piece = LocalSearch.count_group_horizontal(
+        number_of_piece = LocalSearch7.count_group_horizontal(
             current_board, i, j)
-        count_enemy_piece = LocalSearch.count_group_color_shape_horizontal(
+        count_enemy_piece = LocalSearch7.count_group_color_shape_horizontal(
             current_board, enemy_player.color, enemy_player.shape, i, j
         )
-        count_player_piece = LocalSearch.count_group_color_shape_horizontal(
+        count_player_piece = LocalSearch7.count_group_color_shape_horizontal(
             current_board, my_player.color, my_player.shape, i, j
         )
 
@@ -181,11 +181,11 @@ class LocalSearch:
         enemy_player = state.players[
             (int(not n_player))
         ]  # not n_player since n_player can only be 1 or 0 will always refer to the other
-        number_of_piece = LocalSearch.count_group_vertical(current_board, i, j)
-        count_enemy_piece = LocalSearch.count_group_color_shape_vertical(
+        number_of_piece = LocalSearch7.count_group_vertical(current_board, i, j)
+        count_enemy_piece = LocalSearch7.count_group_color_shape_vertical(
             current_board, enemy_player.color, enemy_player.shape, i, j
         )
-        count_player_piece = LocalSearch.count_group_color_shape_vertical(
+        count_player_piece = LocalSearch7.count_group_color_shape_vertical(
             current_board, my_player.color, my_player.shape, i, j
         )
 
@@ -238,12 +238,12 @@ class LocalSearch:
         enemy_player = state.players[
             (int(not n_player))
         ]  # not n_player since n_player can only be 1 or 0 will always refer to the other
-        number_of_piece = LocalSearch.count_group_diagonal(
+        number_of_piece = LocalSearch7.count_group_diagonal(
             current_board, i, j, direction)
-        count_enemy_piece = LocalSearch.count_group_color_shape_diagonal(
+        count_enemy_piece = LocalSearch7.count_group_color_shape_diagonal(
             current_board, enemy_player.color, enemy_player.shape, i, j, direction
         )
-        count_player_piece = LocalSearch.count_group_color_shape_diagonal(
+        count_player_piece = LocalSearch7.count_group_color_shape_diagonal(
             current_board, my_player.color, my_player.shape, i, j, direction
         )
         if number_of_piece == 4:
@@ -297,23 +297,23 @@ class LocalSearch:
         # check horizontally 1 board
         for i in range(current_board.row):
             for j in range(0, current_board.col - 4):
-                state_value += LocalSearch.evaluate_group_horizontal(
+                state_value += LocalSearch7.evaluate_group_horizontal(
                     state, n_player, i, j
                 )
         # check vertically 1 board
         for i in range(current_board.col):
             for j in range(0, current_board.row - 4):
-                state_value += LocalSearch.evaluate_group_vertical(
+                state_value += LocalSearch7.evaluate_group_vertical(
                     state, n_player, j, i
                 )
 
         # check diagonally
         for i in range(current_board.row):
             for j in range(current_board.col):
-                state_value += LocalSearch.evaluate_group_diagonal(
+                state_value += LocalSearch7.evaluate_group_diagonal(
                     state, n_player, i, j, True
                 )
-                state_value += LocalSearch.evaluate_group_diagonal(
+                state_value += LocalSearch7.evaluate_group_diagonal(
                     state, n_player, i, j, False
                 )
 
@@ -363,7 +363,7 @@ class LocalSearch:
 
     @staticmethod
     def make_dummy_move(current_state: State, n_player: int, shape: str, col: int):
-        neighbor_state = copy.deepcopy(current_state)
+        neighbor_state = deepcopy(current_state)
         piece = Piece(shape, GameConstant.PLAYER_COLOR[n_player])
         for row in range(neighbor_state.board.row - 1, -1, -1):
             if neighbor_state.board[row, col].shape == ShapeConstant.BLANK:
@@ -379,7 +379,7 @@ class LocalSearch:
             n_player: int,
     ):
         # Copy dummy state and apply dummy move to calculate delta E without breaking current state
-        neighbor_state = LocalSearch.make_dummy_move(
+        neighbor_state = LocalSearch7.make_dummy_move(
             current_state, n_player, random_successor[1], random_successor[0])
         neighbor_value = self.state_heuristic(neighbor_state, n_player)
 
@@ -395,7 +395,7 @@ class LocalSearch:
         # Iterate while current time doesn't exceed thinking time
         for valid_move in valid_moves:
             # Evaluate each valid moves' value by applying dummy move to neighbor state
-            neighbor_state = LocalSearch.make_dummy_move(
+            neighbor_state = LocalSearch7.make_dummy_move(
                 current_state, n_player, valid_move[1], valid_move[0])
             neighbor_value = self.state_heuristic(neighbor_state, n_player)
             move_evaluations.append([valid_move, neighbor_value])

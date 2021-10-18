@@ -1,16 +1,14 @@
 import copy
-from os import stat
 import random
-from time import time
-
-from src.constant import ShapeConstant, GameConstant
-from src.model import State, Board, Player, Piece
 from itertools import product
-
+from time import time
 from typing import Tuple, List
 
+from src.constant import ShapeConstant, GameConstant
+from src.model import State, Board, Piece
 
-class Minimax:
+
+class Minimax7:
     ON_PROGRESS = "ON_PROGRESS"
     DRAW = "DRAW"
     WIN = "WIN"
@@ -25,7 +23,8 @@ class Minimax:
         # best_movement = (random.randint(0, state.board.col - 1), random.choice([ShapeConstant.CROSS, ShapeConstant.CIRCLE])) #minimax algorithm
 
         # start_time = time()        
-        best_movement = Minimax.MinimaxAlphaBetaPruning(state, -9999, 9999, True, n_player, time() + thinking_time)[1] # minimax algorithm
+        best_movement = Minimax7.MinimaxAlphaBetaPruning(state, -9999, 9999, True, n_player, time() + thinking_time)[
+            1]  # minimax algorithm
 
         # neighbor_state = copy.deepcopy(state)
         # try_place = Minimax.place(neighbor_state, n_player, best_movement[1], best_movement[0])
@@ -38,11 +37,10 @@ class Minimax:
         #     print(Minimax.utility_function(neighbor_state, outcome))
         # else:
         #     print("INVALID")
-        
+
         print("move ---------------------")
         print(best_movement)
         return best_movement
-
 
     def utility_function(state: State, outcome: str):
         fill_count = 0
@@ -50,16 +48,16 @@ class Minimax:
             for col in range(state.board.col):
                 if state.board[row, col].shape != ShapeConstant.BLANK:
                     fill_count += 1
-                    
+
         value = 42 - fill_count + 1
-        
-        if outcome == Minimax.WIN:
+
+        if outcome == Minimax7.WIN:
             return value
 
-        if outcome == Minimax.LOSE:
+        if outcome == Minimax7.LOSE:
             return -1 * value
 
-        return 0        
+        return 0
 
     '''
             if (state = gameOver){  #kondisi menang, seri, kalah
@@ -94,6 +92,7 @@ class Minimax:
         }
 
     '''
+
     # kalau kita main sebagai player 1 (n_player = 0) maka white_player true, vice versa
     # White -> memaksimumkan
     # Black -> meminimumkan
@@ -103,34 +102,35 @@ class Minimax:
     # else:
     #     MinimaxAlphaBetaPruning(state, alpha, beta, False, 1)
     @staticmethod
-    def MinimaxAlphaBetaPruning(state: State, alpha: int, beta: int, white_player: bool, n_player: int, thinking_time: float) -> Tuple[int, Tuple[int, str]]:
+    def MinimaxAlphaBetaPruning(state: State, alpha: int, beta: int, white_player: bool, n_player: int,
+                                thinking_time: float) -> Tuple[int, Tuple[int, str]]:
         current_board = state.board
-        
-        outcome = Minimax.get_current_outcome(state, n_player)
+
+        outcome = Minimax7.get_current_outcome(state, n_player)
         # print(state.board)
-        if Minimax.is_game_over(outcome):
+        if Minimax7.is_game_over(outcome):
             # print(Minimax.utility_function(state, outcome))
             # test = input("Ujung gan")
-            return (Minimax.utility_function(state, outcome), ())
+            return (Minimax7.utility_function(state, outcome), ())
 
         if white_player:
-            maxVal = -9999 # negative infinity
-            
-            valid_moves = Minimax.get_valid_moves(state, n_player)
+            maxVal = -9999  # negative infinity
+
+            valid_moves = Minimax7.get_valid_moves(state, n_player)
             random.shuffle(valid_moves)
             maxMove = None
-            
+
             # For each child of current state
             for move in valid_moves:
                 if (time()) > thinking_time:
-                    print("HEHE")
                     return (maxVal, random.choice(valid_moves) if maxMove == None else maxMove)
                 neighbor_state = copy.deepcopy(state)
-                try_place = Minimax.place(neighbor_state, n_player, move[1], move[0])
-                
-                tempResult = Minimax.MinimaxAlphaBetaPruning(neighbor_state, alpha, beta, not white_player, n_player, thinking_time)
+                try_place = Minimax7.place(neighbor_state, n_player, move[1], move[0])
+
+                tempResult = Minimax7.MinimaxAlphaBetaPruning(neighbor_state, alpha, beta, not white_player, n_player,
+                                                              thinking_time)
                 tempValue = tempResult[0]
-                
+
                 if (tempValue > maxVal):
                     maxVal = tempValue
                     maxMove = move
@@ -140,38 +140,37 @@ class Minimax:
                 if (beta <= alpha):
                     # test = input("test: di white")
                     break
-            
+
             return (maxVal, maxMove)
-            
+
         else:
-            minVal = 9999 # positive infinity
-            
+            minVal = 9999  # positive infinity
+
             black_n_player = n_player ^ 1
-            valid_moves = Minimax.get_valid_moves(state, black_n_player)
+            valid_moves = Minimax7.get_valid_moves(state, black_n_player)
             random.shuffle(valid_moves)
-            minMove = None 
-            
+            minMove = None
+
             for move in valid_moves:
                 if (time()) > thinking_time:
-                    print("HEHE")
                     return (minVal, random.choice(valid_moves) if minMove == None else minMove)
                 neighbor_state = copy.deepcopy(state)
-                Minimax.place(neighbor_state, black_n_player, move[1], move[0])
-                tempResult = Minimax.MinimaxAlphaBetaPruning(neighbor_state, alpha, beta, not white_player, n_player, thinking_time)
+                Minimax7.place(neighbor_state, black_n_player, move[1], move[0])
+                tempResult = Minimax7.MinimaxAlphaBetaPruning(neighbor_state, alpha, beta, not white_player, n_player,
+                                                              thinking_time)
                 tempValue = tempResult[0]
 
                 if tempValue < minVal:
                     minVal = tempValue
                     minMove = move
-                
+
                 beta = min(beta, minVal)
-                
+
                 if (beta <= alpha):
                     # test = input("test: di black")
                     break
-                
-            return (minVal, minMove)                                        
 
+            return (minVal, minMove)
 
     @staticmethod
     def is_win(board: Board) -> str:
@@ -187,7 +186,7 @@ class Minimax:
         temp_win = None
         for row in range(board.row):
             for col in range(board.col):
-                checked = Minimax.check_streak(board, row, col)
+                checked = Minimax7.check_streak(board, row, col)
                 if checked:
                     if checked[0] == GameConstant.WIN_PRIOR[0]:
                         return checked[1]
@@ -197,19 +196,19 @@ class Minimax:
         return temp_win
 
     def get_current_outcome(state: State, n_player: int) -> str:
-        temp_win = Minimax.is_win(state.board)
+        temp_win = Minimax7.is_win(state.board)
         if temp_win == None:
-            return Minimax.DRAW if Minimax.is_full(state.board) else Minimax.ON_PROGRESS
+            return Minimax7.DRAW if Minimax7.is_full(state.board) else Minimax7.ON_PROGRESS
 
         for i, player in enumerate(state.players):
             if temp_win[0] == player.shape and temp_win[1] == player.color:
                 if i == n_player:
-                    return Minimax.WIN
+                    return Minimax7.WIN
                 else:
-                    return Minimax.LOSE
+                    return Minimax7.LOSE
 
     def is_game_over(outcome: str) -> bool:
-        GAME_OVER_OUTCOMES = [Minimax.WIN, Minimax.LOSE, Minimax.DRAW]
+        GAME_OVER_OUTCOMES = [Minimax7.WIN, Minimax7.LOSE, Minimax7.DRAW]
 
         return outcome in GAME_OVER_OUTCOMES
 
@@ -238,17 +237,17 @@ class Minimax:
                 row_ = row + row_ax
                 col_ = col + col_ax
                 for _ in range(GameConstant.N_COMPONENT_STREAK - 1):
-                    if Minimax.is_out(board, row_, col_):
+                    if Minimax7.is_out(board, row_, col_):
                         mark = 0
                         break
 
                     shape_condition = (
-                        prior == GameConstant.SHAPE
-                        and piece.shape != board[row_, col_].shape
+                            prior == GameConstant.SHAPE
+                            and piece.shape != board[row_, col_].shape
                     )
                     color_condition = (
-                        prior == GameConstant.COLOR
-                        and piece.color != board[row_, col_].color
+                            prior == GameConstant.COLOR
+                            and piece.color != board[row_, col_].color
                     )
                     if shape_condition or color_condition:
                         mark = 0
@@ -267,7 +266,7 @@ class Minimax:
                         if prior == GameConstant.SHAPE:
                             if piece.shape == player[0]:
                                 return (prior, player)
-                                
+
                         elif prior == GameConstant.COLOR:
                             if piece.color == player[1]:
                                 return (prior, player)
@@ -329,7 +328,7 @@ class Minimax:
                 return row
 
         return -1
-        
+
     @staticmethod
     def get_empty_column(current_state: State) -> List[int]:
         # Only need check if board[0] is empty (contains blank piece)
@@ -359,11 +358,7 @@ class Minimax:
     def get_valid_moves(
             current_state: State, n_player: int
     ) -> List[Tuple[int, str]]:
-        valid_columns = Minimax.get_empty_column(current_state)
-        valid_shape = Minimax.get_available_shape(current_state, n_player)
+        valid_columns = Minimax7.get_empty_column(current_state)
+        valid_shape = Minimax7.get_available_shape(current_state, n_player)
 
         return list(product(valid_columns, valid_shape))
-
-
-
-
