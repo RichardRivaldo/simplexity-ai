@@ -13,7 +13,6 @@ class Minimax7:
     DRAW = "DRAW"
     WIN = "WIN"
     LOSE = "LOSE"
-    i = 0
 
     def __init__(self):
         pass
@@ -23,31 +22,12 @@ class Minimax7:
     ) -> Tuple[str, str]:
         self.thinking_time = time() + thinking_time
 
-        # best_movement = (random.randint(0, state.board.col - 1), random.choice([ShapeConstant.CROSS, ShapeConstant.CIRCLE])) #minimax algorithm
-
-        # start_time = time()
-        Minimax7.i = 0
         best_movement = Minimax7.MinimaxAlphaBetaPruning(
             state, -9999, 9999, True, n_player, time() + thinking_time
         )[
             1
-        ]  # minimax algorithm
-
-        # neighbor_state = copy.deepcopy(state)
-        # try_place = Minimax.place(neighbor_state, n_player, best_movement[1], best_movement[0])
-
-        # print("--------------")
-        # if try_place != -1:
-        #     outcome = Minimax.get_current_outcome(neighbor_state, n_player)
-        #     print(outcome)
-        #     print(Minimax.is_game_over(outcome))
-        #     print(Minimax.utility_function(neighbor_state, outcome))
-        # else:
-        #     print("INVALID")
-
-        # print("move ---------------------")
-        # print(best_movement)
-        # test = input("-------------")
+        ]  
+        
         return best_movement
 
     def utility_function(state: State, outcome: str):
@@ -67,48 +47,6 @@ class Minimax7:
 
         return 0
 
-    """
-            if (state = gameOver){  #kondisi menang, seri, kalah
-            return UtilityFunction(state)
-        }
-        if (whitePlayer -> kalo giliran kita) {	# White Player, find the maximum
-            maxValue ← (- infinity)
-            tempState := None
-            For each child of state{
-            # tempState = child
-            tempValue ←  minimaxBot(child, alpha, beta, False)
-            maxValue ←  max(tempValue, maxValue)
-            alpha ← max (alpha, maxValue)
-            If (beta ≤ alpha){
-            Break 	 #prune this child and all child of this child
-        }
-        }
-            return maxValue, 
-        }
-        else { -> kalo giliran musuh		# Black Player, find the minimum
-            minValue ← (+ infinity)
-            For each child of state{
-            tempValue ←  minimaxBot(child, alpha, beta, True)
-            maxValue ←  min(tempValue, minValue)
-        beta ← min (beta, minValue)
-            if (beta ≤ alpha){
-            Break 	 #prune this child and all child of this child
-        }
-        }
-            return minValue
-        }
-        }
-
-    """
-
-    # kalau kita main sebagai player 1 (n_player = 0) maka white_player true, vice versa
-    # White -> memaksimumkan
-    # Black -> meminimumkan
-
-    # if (n_player == 0):
-    #     MinimaxAlphaBetaPruning(state, alpha, beta, True, 0)
-    # else:
-    #     MinimaxAlphaBetaPruning(state, alpha, beta, False, 1)
     @staticmethod
     def MinimaxAlphaBetaPruning(
             state: State,
@@ -121,11 +59,7 @@ class Minimax7:
         current_board = state.board
 
         outcome = Minimax7.get_current_outcome(state, n_player)
-        # print(state.board)
-        if Minimax7.is_game_over(outcome):
-            # print(Minimax.utility_function(state, outcome))
-            # test = input("Ujung gan")
-            # print("ujung gan")
+        if Minimax7.is_game_over(outcome):            
             return (Minimax7.utility_function(state, outcome), ())
 
         if white_player:
@@ -135,7 +69,7 @@ class Minimax7:
 
             # random.shuffle(valid_moves) -> approach 1
 
-            # local search -> approach 2\
+            # local search -> approach 2
             move_evaluations = []
             for move in valid_moves:
                 neighbor_state = copy.deepcopy(state)
@@ -147,21 +81,12 @@ class Minimax7:
 
             move_evaluations.sort(key=lambda x: x[1], reverse=True)
 
-            if Minimax7.i == 0:
-                for m in move_evaluations:
-                    print(m)
-                print("++++++++++++++++++++++++++++++++++++ white")
-
-            Minimax7.i += 1
-            # test = input("done sort")
-
             maxMove = None
 
             # For each child of current state
             for move_evaluation in move_evaluations:
                 move = move_evaluation[0]
                 if (time()) > thinking_time:
-                    print("HEHE")
                     return (
                         maxVal,
                         move_evaluations[0][0] if maxMove == None else maxMove,
@@ -186,7 +111,7 @@ class Minimax7:
                 alpha = max(alpha, maxVal)
 
                 if beta <= alpha:
-                    # test = input("test: di white")
+
                     break
 
             return (maxVal, maxMove)
@@ -211,18 +136,11 @@ class Minimax7:
 
             move_evaluations.sort(key=lambda x: x[1], reverse=True)
 
-            # for m in move_evaluations:
-            #     print(m)
-            # print("++++++++++++++++++++++++++++++++++++ black")
-
-            # test = input("---------------")
-
             minMove = None
 
             for move_evaluation in move_evaluations:
                 move = move_evaluation[0]
                 if (time()) > thinking_time:
-                    print("HEHE")
                     return (
                         minVal,
                         move_evaluations[0][0] if minMove == None else minMove,
@@ -246,7 +164,7 @@ class Minimax7:
                 beta = min(beta, minVal)
 
                 if beta <= alpha:
-                    # test = input("test: di black")
+
                     break
 
             return (minVal, minMove)
@@ -599,10 +517,10 @@ class Minimax7:
             if count_enemy_piece == 4:
                 return -99999
             elif count_player_piece == 4:
-                return 99999
+                return 999999
             elif count_enemy_piece == 3:
                 # 3 enemy and 1 us == enemy is blocked
-                return 99999
+                return 999999
             elif count_enemy_piece == 2:
                 # 2 enemy and 2 us
                 return 0
@@ -656,11 +574,10 @@ class Minimax7:
             if count_enemy_piece == 4:
                 return -99999
             elif count_player_piece == 4:
-                return 99999
+                return 999999
             elif count_enemy_piece == 3:
                 # 3 enemy and 1 us == enemy is blocked
-                # print("sini")
-                return 99999
+                return 999999
             elif count_enemy_piece == 2:
                 # 2 enemy and 2 us
                 return 0
@@ -715,10 +632,10 @@ class Minimax7:
             if count_enemy_piece == 4:
                 return -99999
             elif count_player_piece == 4:
-                return 99999
+                return 999999
             elif count_enemy_piece == 3:
                 # 3 enemy and 1 us == enemy is blocked
-                return 99999
+                return 999999
             elif count_enemy_piece == 2:
                 # 2 enemy and 2 us
                 return 0
