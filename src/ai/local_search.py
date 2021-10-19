@@ -10,7 +10,7 @@ from src.utility import *
 
 
 class LocalSearch7:
-    def __init__(self, algorithm="SA"):
+    def __init__(self, algorithm="HC"):
         self.algorithm = algorithm
 
     def find(
@@ -26,6 +26,8 @@ class LocalSearch7:
         # return number of pieces in a 4 group horizontally
         count_piece = 0
         for i in range(col, col + 4):
+            if (is_out(board, row, i)):
+                return 0
             if board[row, i].shape != ShapeConstant.BLANK:
                 count_piece += 1
         return count_piece
@@ -35,6 +37,8 @@ class LocalSearch7:
         # return number of pieces in a 4 group horizontally
         count_piece = 0
         for i in range(row, row + 4):
+            if (is_out(board, i, col)):
+                return 0
             if board[i, col].shape != ShapeConstant.BLANK:
                 count_piece += 1
         return count_piece
@@ -72,6 +76,8 @@ class LocalSearch7:
         # return number of pieces in a group that fits either color or shape
         count_piece = 0
         for i in range(col, col + 4):
+            if (is_out(board, row, i)):
+                return 0
             if board[row, i].shape == shape or board[row, i].color == color:
                 count_piece += 1
         return count_piece
@@ -83,6 +89,8 @@ class LocalSearch7:
         # return number of pieces in a group that fits either color or shape
         count_piece = 0
         for i in range(row, row + 4):
+            if (is_out(board, i, col)):
+                return 0
             if board[i, col].shape == shape or board[i, col].color == color:
                 count_piece += 1
         return count_piece
@@ -137,10 +145,10 @@ class LocalSearch7:
             if count_enemy_piece == 4:
                 return -99999
             elif count_player_piece == 4:
-                return 999999
+                return 99999
             elif count_enemy_piece == 3:
                 # 3 enemy and 1 us == enemy is blocked
-                return 999999
+                return 99999
             elif count_enemy_piece == 2:
                 # 2 enemy and 2 us
                 return 0
@@ -195,10 +203,10 @@ class LocalSearch7:
             if count_enemy_piece == 4:
                 return -99999
             elif count_player_piece == 4:
-                return 999999
+                return 99999
             elif count_enemy_piece == 3:
                 # 3 enemy and 1 us == enemy is blocked
-                return 999999
+                return 99999
             elif count_enemy_piece == 2:
                 # 2 enemy and 2 us
                 return 0
@@ -252,10 +260,10 @@ class LocalSearch7:
             if count_enemy_piece == 4:
                 return -99999
             elif count_player_piece == 4:
-                return 999999
+                return 99999
             elif count_enemy_piece == 3:
                 # 3 enemy and 1 us == enemy is blocked
-                return 999999
+                return 99999
             elif count_enemy_piece == 2:
                 # 2 enemy and 2 us
                 return 0
@@ -297,13 +305,13 @@ class LocalSearch7:
         state_value = 0
         # check horizontally 1 board
         for i in range(current_board.row):
-            for j in range(0, current_board.col - 4):
+            for j in range(0, current_board.col):
                 state_value += LocalSearch7.evaluate_group_horizontal(
                     state, n_player, i, j
                 )
         # check vertically 1 board
         for i in range(current_board.col):
-            for j in range(0, current_board.row - 4):
+            for j in range(0, current_board.row):
                 state_value += LocalSearch7.evaluate_group_vertical(
                     state, n_player, j, i
                 )
@@ -419,7 +427,7 @@ class LocalSearch7:
         # Greedy Simulated Annealing -> Find best neighbor that gives highest state value
         # Initialize value for comparison
         move_choice = (None, None)
-        move_value = -99999
+        move_value = 0
         move_probability = random.uniform(0, 1)
 
         # Iterate until the temperature is cool enough
@@ -437,16 +445,19 @@ class LocalSearch7:
 
             # Generate random move and check the difference on state value
             random_next_move = self.select_random_move(current_state, n_player)
+            print(str(random_next_move[0]) + "kolom")
             if random_next_move:
                 delta_e = self.calculate_delta_e(
                     current_state, current_value, random_next_move, n_player)
                 if delta_e > 0:
                     if delta_e > move_value:
                         move_choice = random_next_move
-                        move_value = delta_e
+                        move_value = self.state_heuristic(self.make_dummy_move(
+                            current_state, n_player, random_next_move[1], random_next_move[0]), n_player)
                 elif exp(delta_e / current_temperature) > move_probability:
                     move_choice = random_next_move
-                    move_value = delta_e
+                    move_value = self.state_heuristic(self.make_dummy_move(
+                        current_state, n_player, random_next_move[1], random_next_move[0]), n_player)
 
     # Wrapper to find best move based on algorithm choice
     def local_search(self, current_state: State, n_player: int, algorithm: str) -> Tuple[int, str]:
