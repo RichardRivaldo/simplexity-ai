@@ -137,10 +137,10 @@ class LocalSearch7:
             if count_enemy_piece == 4:
                 return -99999
             elif count_player_piece == 4:
-                return 99999
+                return 999999
             elif count_enemy_piece == 3:
                 # 3 enemy and 1 us == enemy is blocked
-                return 99999
+                return 999999
             elif count_enemy_piece == 2:
                 # 2 enemy and 2 us
                 return 0
@@ -181,7 +181,8 @@ class LocalSearch7:
         enemy_player = state.players[
             (int(not n_player))
         ]  # not n_player since n_player can only be 1 or 0 will always refer to the other
-        number_of_piece = LocalSearch7.count_group_vertical(current_board, i, j)
+        number_of_piece = LocalSearch7.count_group_vertical(
+            current_board, i, j)
         count_enemy_piece = LocalSearch7.count_group_color_shape_vertical(
             current_board, enemy_player.color, enemy_player.shape, i, j
         )
@@ -194,10 +195,10 @@ class LocalSearch7:
             if count_enemy_piece == 4:
                 return -99999
             elif count_player_piece == 4:
-                return 99999
+                return 999999
             elif count_enemy_piece == 3:
                 # 3 enemy and 1 us == enemy is blocked
-                return 99999
+                return 999999
             elif count_enemy_piece == 2:
                 # 2 enemy and 2 us
                 return 0
@@ -251,10 +252,10 @@ class LocalSearch7:
             if count_enemy_piece == 4:
                 return -99999
             elif count_player_piece == 4:
-                return 99999
+                return 999999
             elif count_enemy_piece == 3:
                 # 3 enemy and 1 us == enemy is blocked
-                return 99999
+                return 999999
             elif count_enemy_piece == 2:
                 # 2 enemy and 2 us
                 return 0
@@ -316,7 +317,7 @@ class LocalSearch7:
                 state_value += LocalSearch7.evaluate_group_diagonal(
                     state, n_player, i, j, False
                 )
-
+        # print(state_value)
         return state_value
 
     # Get empty column to place pieces
