@@ -406,7 +406,6 @@ class LocalSearch7:
             # Evaluate each valid moves' value by applying dummy move to neighbor state
             neighbor_state = LocalSearch7.make_dummy_move(
                 current_state, n_player, valid_move[1], valid_move[0])
-            print(self.state_heuristic(neighbor_state, n_player))
             neighbor_value = self.state_heuristic(neighbor_state, n_player)
             move_evaluations.append([valid_move, neighbor_value])
 
